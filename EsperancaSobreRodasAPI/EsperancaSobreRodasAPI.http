@@ -1,0 +1,6 @@
+@EsperancaSobreRodasAPI_HostAddress = http://localhost:5156
+
+GET {{EsperancaSobreRodasAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
