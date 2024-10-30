@@ -1,10 +1,14 @@
 ﻿
+using EsperancaSobreRodasAPI.DTO;
 using EsperancaSobreRodasAPI.Models;
 using EsperancaSobreRodasAPI.Repositories.Interface;
+using EsperancaSobreRodasAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EsperancaSobreRodasAPI.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsuarioController : ControllerBase
@@ -31,11 +35,39 @@ namespace EsperancaSobreRodasAPI.Controllers
             return Ok(usuario);
         }
 
+        [AllowAnonymous]
         [HttpPost]
         public async Task<ActionResult<UsuarioModel>> Cadastrar([FromBody] UsuarioModel usuarioModel)
         {
             UsuarioModel usuario = await _usuarioRepository.Cadastrar(usuarioModel);
             return Ok(usuario);
+        }                
+
+        [AllowAnonymous]
+        [HttpGet("token")]
+        public async Task<ActionResult<UsuarioComToken>> BuscarToken([FromQuery] int id, [FromQuery] string senhaUsuario)
+        {            
+            var usuario = await _usuarioRepository.BuscarPorId(id);
+
+            if (usuario == null)
+            {
+                return NotFound(new { mensagem = "Usuário não encontrado" });
+            }
+
+            if (usuario.SenhaUsuario != senhaUsuario)
+            {
+                return Unauthorized(new { mensagem = "Nome de usuário ou senha incorretos" });
+            }
+
+            var token = TokenService.GenerateToken(usuario);
+            
+            var resposta = new UsuarioComToken
+            {
+                Usuario = usuario,
+                Token = token
+            };
+
+            return Ok(resposta);
         }
 
         [HttpPut("{id}")]
@@ -52,6 +84,5 @@ namespace EsperancaSobreRodasAPI.Controllers
             bool apagado = await _usuarioRepository.Deletar(id);
             return Ok(apagado);
         }
-
     }
 }
